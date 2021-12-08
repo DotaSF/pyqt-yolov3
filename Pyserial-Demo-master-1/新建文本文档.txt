@@ -1,0 +1,7 @@
+界面：
+ui_demo_1是serial
+ui_demo_2是serial+yolo
+ui_demo_3是serial+yolo+网络
+
+上位机：
+这里的pyserial_demo.py是serial+yolo+网络的界面，功能是serial+yolo

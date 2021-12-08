@@ -1,0 +1,131 @@
+from PyQt5 import QtWidgets
+from tcp_udp_web_tools import tcp_logic, udp_logic, web_logic   #调用那几个功能界面
+import socket
+import sys
+
+
+class MainWindow(tcp_logic.TcpLogic, udp_logic.UdpLogic, web_logic.WebLogic):     #继承那几个界面
+    def __init__(self, num):            #初始化
+        super(MainWindow, self).__init__(num)
+        self.client_socket_list = list()       #客户端socket列表，及IP和端口信息
+        self.another = None    #新建窗口
+        self.link = False           #标志位
+
+        # 打开软件时默认获取本机ip
+        self.click_get_ip()
+
+    def connect(self, ):     #控件信号-槽的设置，跟__init__分开写了，其实是可以合并在一起的！！！！
+        """
+        控件信号-槽的设置
+        :param : QDialog类创建的对象
+        :return: None
+        """
+        # 如需传递参数可以修改为connect(lambda: self.click(参数))
+        super(MainWindow, self).connect()    #super( test, self).__init__()  首先找到test的父类（比如是类A），
+                                                                   #然后把类test的对象self转换为类A的对象，
+                                                                   #然后“被转换”的类A对象调用自己的__init__函数，
+                                                                   #总而言之，这个的功能就是在加载类的时候同事调用该函数，跟__init__一样
+        self.pushButton_link.clicked.connect(self.click_link)
+        self.pushButton_unlink.clicked.connect(self.click_unlink)
+        self.pushButton_get_ip.clicked.connect(self.click_get_ip)
+        self.pushButton_clear.clicked.connect(self.click_clear)
+        self.pushButton_send.clicked.connect(self.send)
+        self.pushButton_dir.clicked.connect(self.click_dir)
+        self.pushButton_exit.clicked.connect(self.close)
+        self.pushButton_else.clicked.connect(self.another_window)
+
+    def click_link(self):        #“连接网络”按钮
+        """
+        pushbutton_link控件点击触发的槽
+        :return: None
+        """
+        # 连接时根据用户选择的功能调用函数
+        if self.comboBox_tcp.currentIndex() == 0:
+            self.tcp_server_start()
+        if self.comboBox_tcp.currentIndex() == 1:
+            self.tcp_client_start()
+        if self.comboBox_tcp.currentIndex() == 2:
+            self.udp_server_start()
+        if self.comboBox_tcp.currentIndex() == 3:
+            self.udp_client_start()
+        if self.comboBox_tcp.currentIndex() == 4:
+            self.web_server_start()
+        self.link = True
+        self.pushButton_unlink.setEnabled(True)  #“断开网络”按钮生效
+        self.pushButton_link.setEnabled(False)  #“连接网络”按钮失效
+
+    def click_unlink(self):    #“断开网络”按钮
+        """
+        pushbutton_unlink控件点击触发的槽
+        :return: None
+        """
+        # 关闭连接
+        self.close_all()
+        self.link = False
+        self.pushButton_unlink.setEnabled(False)
+        self.pushButton_link.setEnabled(True)
+
+    def click_get_ip(self):            #"重新获取IP"按钮
+        """
+        pushbutton_get_ip控件点击触发的槽
+        :return: None
+        """
+        # 获取本机ip
+        self.lineEdit_ip_local.clear()
+        my_addr = socket.gethostbyname(socket.gethostname())
+        self.lineEdit_ip_local.setText(str(my_addr))
+
+    def send(self):          #"发送"按钮
+        """
+        pushbutton_send控件点击触发的槽
+        :return: 
+        """
+        # 连接时根据用户选择的功能调用函数
+        if self.comboBox_tcp.currentIndex() == 0 or self.comboBox_tcp.currentIndex() == 1:
+            self.tcp_send()          #这个在tcp_send函数中再做服务端和客户端的判断
+        if self.comboBox_tcp.currentIndex() == 2 or self.comboBox_tcp.currentIndex() == 3:
+            self.udp_send()
+        if self.comboBox_tcp.currentIndex() == 4:
+            self.web_send()
+
+    def click_clear(self):     #"清除消息"按钮
+        """
+        pushbutton_clear控件点击触发的槽
+        :return: None
+        """
+        # 清空接收区屏幕
+        self.textBrowser_recv.clear()
+
+    def click_dir(self):            #"选择路径"按钮
+        # WEB服务端功能中选择路径
+        self.web_get_dir()
+
+    def close_all(self):             #这才是正牌的close_all函数，在“断开网络”按钮按下时
+        """
+        功能函数，关闭网络连接的方法
+        :return:
+        """
+        # 连接时根据用户选择的功能调用函数
+        if self.comboBox_tcp.currentIndex() == 0 or self.comboBox_tcp.currentIndex() == 1:
+            self.tcp_close()
+        if self.comboBox_tcp.currentIndex() == 2 or self.comboBox_tcp.currentIndex() == 3:
+            self.udp_close()
+        if self.comboBox_tcp.currentIndex() == 4:
+            self.web_close()
+        self.reset()        #断开网络之后，重置网络连接状态
+
+    def reset(self):
+        """
+        功能函数，将按钮重置为初始状态
+        :return:None
+        """
+        self.link = False         #标记非连接
+        self.client_socket_list = list()       #客户端IP和端口清零
+        self.pushButton_unlink.setEnabled(False)        #断开网络按钮失效
+        self.pushButton_link.setEnabled(True)
+
+if __name__ == '__main__':
+    app = QtWidgets.QApplication(sys.argv)
+    ui = MainWindow(1)    #打开时是继承的第一个TCP的界面
+    ui.show()
+    sys.exit(app.exec_())
